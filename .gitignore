@@ -1,19 +1,9 @@
 
 Notes.txt
-pyirsdk-master/irsdk.py
-pyirsdk-master/LICENSE
-pyirsdk-master/MANIFEST.in
-pyirsdk-master/README.md
-pyirsdk-master/setup.py
-pyirsdk-master/tutorials/01 Introduction.md
-pyirsdk-master/tutorials/02 Using irsdk script.md
-pyirsdk-master/tutorials/03 Base application.md
-pyirsdk-master/README.txt
-pyirsdk-master/vars.txt
-__pycache__/hybrid_train.cpython-39.pyc
-__pycache__/hybrid_track.cpython-39.pyc
-__pycache__/hybrid_deploy.cpython-39.pyc
-__pycache__/deploy.cpython-39.pyc
+__pycache__/*
+Data/*
 *.dat
 test.py
 main_old.py
+.vscode/settings.json
+Telemetry_Notes.txt
