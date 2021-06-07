@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import SGDClassifier
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn import svm
 
 from sklearn.model_selection import train_test_split
@@ -162,7 +162,25 @@ def findSGDModel(x_train, y_train, x_test, y_test):
     print("\tY Hat Min:", np.min(y_hat))
 
     return model
-   
+
+def findNNModel(x_train, y_train, x_test, y_test):
+    # Create linear regression model
+    model = KNeighborsClassifier()
+
+    # Train the model
+    model.fit(x_train, y_train)
+
+    # Test the model
+    y_hat = np.round(model.predict(x_test))
+
+    # Print accuracy
+    accuracy = len(np.where(y_hat == y_test)[0]) / float(len(y_test)) * 100
+    print("NN Model Accuracy: %3.3f" %accuracy)
+    print("\tY Hat Max:", np.max(y_hat))
+    print("\tY Hat Min:", np.min(y_hat))
+
+    return model
+
 if __name__ == "__main__":
     # Check cmd line arguments
     if len(sys.argv) != 2:
@@ -193,3 +211,4 @@ if __name__ == "__main__":
     print("", flush=True)
     sgd_model = findSGDModel(x_train, y_train, x_test, y_test)
     print("", flush=True)
+    nn_model = findNNModel(x_train, y_train, x_test, y_test)
