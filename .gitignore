@@ -1,9 +1,4 @@
 
-Notes.txt
 __pycache__/*
+.vscode/*
 Data/*
-*.dat
-test.py
-main_old.py
-.vscode/settings.json
-Telemetry_Notes.txt

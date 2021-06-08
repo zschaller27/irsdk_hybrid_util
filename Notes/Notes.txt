@@ -1,0 +1,11 @@
+Main Idea:
+
+Utility that automatically determines how much hybrid boost to deploy at any given time.
+    - Needs to "learn" the track to find the straights
+    - Needs to calculate regen from braking (also under accel for porsche)
+
+Steps:
+    - Figure out when a new lap starts  DONE
+        - Use 'LapDistPct' to find when a new lap ticks over.
+    
+    - Time at full throttle

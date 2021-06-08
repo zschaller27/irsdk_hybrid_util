@@ -1,0 +1,14 @@
+The manual boost is shown by field: ManualBoost
+    COLUMN: 134 in csv file
+
+Important Fields:
+    Brake : 8
+    EnergyERSBateryPct : 18
+    EnergyMGU_KLapDeployPct : 19
+    Speed : 235
+    SteeringWheelAngle : 238      ?
+    Throttle : 246
+    VelocityY : 276                 ?
+    dcMGUKDeployFixed : 303
+    dcMGUKDeployMode : 304
+    dcMGUKRegenGain : 305
