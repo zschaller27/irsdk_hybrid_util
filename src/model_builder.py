@@ -1,3 +1,4 @@
+from functools import reduce
 import numpy as np
 import pandas as pd
 
@@ -86,7 +87,7 @@ def loadData(paths, features):
             usecols=lambda x: x in features))
 
         # Normalize d
-        d = d / np.sum(d)
+        # d = d / np.sum(d)
 
         # If there is no data before reset the variable
         if data is None:
@@ -98,20 +99,14 @@ def loadData(paths, features):
     return data
 
 def reduceDataSet(dataset):
-    index = 0
+    class_0_indicies = np.where(dataset[:, 0] == 0)[0]
+    class_1_indicies = np.where(dataset[:, 0] == 1)[0]
 
-    # Go through each possible combination of data points
-    while index <= dataset.shape[0]:
-        similar_indicies = []
-        for compare_index in range(dataset.shape[0]):
-            if np.linalg.norm(dataset[index] - data[compare_index]) < 0.1:
-                similar_indicies.append(compare_index)
-        
-        np.delete(dataset, similar_indicies)
+    np.random.shuffle(class_0_indicies)
 
-        index += 1
+    chosen_indicies = class_0_indicies[:int(0.5 * len(class_0_indicies))]
 
-    return dataset
+    return np.delete(dataset, chosen_indicies, axis=0)
 
 """
 The following functions train and return different types of models. They all also
@@ -234,18 +229,18 @@ def findMLPModel(x_train, y_train, x_test, y_test):
 
 def findNeuralNetModel(x_train, y_train, x_test, y_test):
     # Make NN
-    net = iRacing_NN.iRacing_Network(x_train.shape[1], 100, 100)
+    net = iRacing_NN.iRacing_Network(x_train.shape[1], 10, 25)
 
     # Set opimizer and criterion
-    criterion = nn.CrossEntropyLoss()
-    # optimizer = torch.optim.SGD(net.parameters(), lr=0.00001, weight_decay=0.0001)
-    optimizer = torch.optim.Adadelta(net.parameters())
+    criterion = nn.MSELoss()
+    # optimizer = torch.optim.SGD(net.parameters(), lr=1e-3, momentum=0.9)
+    optimizer = torch.optim.Adam(net.parameters(), lr=1e-5)
 
     ## Test Code ##
     print("Neural Net: Starting Training", flush=True)
     ## ENd Test Code ##
 
-    iRacing_NN.trainNetwork(net, x_train, y_train, optimizer, 1000, 10000, criterion)
+    iRacing_NN.trainNetwork(net, x_train, y_train, optimizer, 20000, -1, criterion)
 
     y_hat, accuracy = iRacing_NN.success_rate(net, x_test, y_test)
 
@@ -277,9 +272,6 @@ if __name__ == "__main__":
         "dcMGUKDeployFixed", "dcMGUKDeployMode", "dcMGUKRegenGain"]
 
     data = loadData(findPaths(data_dir), features)
-
-    # print(data.shape)
-    # print(reduceDataSet(data).shape)
 
     x_train, x_test, y_train, y_test = train_test_split(data[:, 1:], data[:, 0], test_size=0.1, random_state=0)
 

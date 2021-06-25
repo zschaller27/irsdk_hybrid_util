@@ -13,12 +13,11 @@ class iRacing_Network(nn.Module):
 
         # Build Network Architecture
         self.in_layer = nn.Linear(num_features, nodes_per_layer, bias=True)
-        self.output_layer = nn.Linear(nodes_per_layer, 2, bias=True)        # Use 1-hot classification
+        self.output_layer = nn.Linear(nodes_per_layer, 1, bias=True)        # Use 1-hot classification
 
         self.hidden_layers = []
         if num_layers > 1:
-            for _ in range(num_layers - 1):
-                # self.hidden_layers.append(nn.Dropout(p=0.9))   # To help avoid overfitting
+            for i in range(num_layers - 1):
                 self.hidden_layers.append(nn.Linear(nodes_per_layer, nodes_per_layer, bias=True))
 
         self.hidden_layers = nn.ModuleList(self.hidden_layers)
@@ -63,10 +62,10 @@ def trainNetwork(network, x_train, y_train, optimizer, epochs=10, batch_size=16,
         for batch in range(num_batches):
             batch_indicies = indicies[batch * batch_size : (batch + 1) * batch_size]
             x_batch = x_train[batch_indicies]
-            y_batch = y_train[batch_indicies]
+            y_batch = y_train[batch_indicies].float()
 
             # Predict for batch
-            y_hat = network(x_batch)
+            y_hat = network(x_batch).flatten()
 
             # Find loss
             loss = loss_function(y_hat, y_batch)
@@ -77,13 +76,16 @@ def trainNetwork(network, x_train, y_train, optimizer, epochs=10, batch_size=16,
             optimizer.step()
     
         #  Print validation loss every 10 epochs
-        if epoch % 10 == 0:
-            print("Epoch: %d\tloss: %.5f\tDuration: %3.3f" %(epoch, loss.item(), time.time() - epoch_start), flush=True)
+        if epoch == 0 or epoch % 500 == 0:
+            print("Epoch: %d\tLoss: %.7f\tDuration: %3.3f" %(epoch, loss.item(), time.time() - epoch_start), flush=True)
         
-        # Check for convergence
-        if prev_loss is not None and (np.abs(loss - prev_loss) < 0.01 or loss - prev_loss > 0.1):
-            print("Convergence Detected")
+        # Check for loss increasing trend
+        if prev_loss is not None and torch.abs(loss - prev_loss) < 1e-9:
+            print("########## Convergence Detected ##########")
+            print("Epoch: %d\tLoss: %.7f\tPrevious: %.7f" %(epoch, loss.item(), prev_loss.item()), flush=True)
             break
+        else:
+            prev_loss = loss
 
     # Move the network back to cpu for future use
     network = network.to('cpu')
@@ -108,12 +110,10 @@ def success_rate(net, x, y):
     if not isinstance(y, Variable):
         y = Variable(torch.tensor(y, dtype=torch.long))
 
-    pred_Y = net(x)
-
-    _, pred_Y_index = torch.max(pred_Y, 1)
+    pred_Y = torch.round(net(x))
     
-    num_equal = torch.sum(pred_Y_index.data == y.data).item()
-    num_different = torch.sum(pred_Y_index.data != y.data).item()
+    num_equal = torch.sum(pred_Y.data == y.data).item()
+    num_different = torch.sum(pred_Y.data != y.data).item()
     rate = num_equal / float(num_equal + num_different)
 
-    return pred_Y_index.detach().numpy(), rate
+    return pred_Y.detach().numpy(), rate
