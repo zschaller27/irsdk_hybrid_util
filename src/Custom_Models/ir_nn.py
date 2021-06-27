@@ -13,7 +13,7 @@ class iRacing_Network(nn.Module):
 
         # Build Network Architecture
         self.in_layer = nn.Linear(num_features, nodes_per_layer, bias=True)
-        self.output_layer = nn.Linear(nodes_per_layer, 1, bias=True)        # Use 1-hot classification
+        self.output_layer = nn.Linear(nodes_per_layer, 2, bias=True)        # Use 1-hot classification
 
         self.hidden_layers = []
         if num_layers > 1:
@@ -23,7 +23,7 @@ class iRacing_Network(nn.Module):
         self.hidden_layers = nn.ModuleList(self.hidden_layers)
     
     def forward(self, data):      
-        x = F.relu(self.in_layer(data))
+        x = self.in_layer(data)
 
         for layer in self.hidden_layers:
             x = F.relu(layer(x))
@@ -54,6 +54,7 @@ def trainNetwork(network, x_train, y_train, optimizer, epochs=10, batch_size=16,
 
     for epoch in range(epochs):
         epoch_start = time.time()
+        loss = 0.0
 
         # Shuffle a list of avalible indicies (randomizes batches)
         indicies = torch.randperm(x_train.shape[0])
@@ -62,13 +63,13 @@ def trainNetwork(network, x_train, y_train, optimizer, epochs=10, batch_size=16,
         for batch in range(num_batches):
             batch_indicies = indicies[batch * batch_size : (batch + 1) * batch_size]
             x_batch = x_train[batch_indicies]
-            y_batch = y_train[batch_indicies].float()
+            y_batch = y_train[batch_indicies]
 
             # Predict for batch
-            y_hat = network(x_batch).flatten()
+            y_hat = network(x_batch)
 
             # Find loss
-            loss = loss_function(y_hat, y_batch)
+            loss += (x_batch.shape[0] / x_train.shape[0]) * loss_function(y_hat, y_batch)
 
             # Backpropagate
             optimizer.zero_grad()
@@ -111,9 +112,11 @@ def success_rate(net, x, y):
         y = Variable(torch.tensor(y, dtype=torch.long))
 
     pred_Y = torch.round(net(x))
+
+    _, pred_Y_index = torch.max(pred_Y, 1)
     
-    num_equal = torch.sum(pred_Y.data == y.data).item()
-    num_different = torch.sum(pred_Y.data != y.data).item()
+    num_equal = torch.sum(pred_Y_index.data == y.data).item()
+    num_different = torch.sum(pred_Y_index.data != y.data).item()
     rate = num_equal / float(num_equal + num_different)
 
-    return pred_Y.detach().numpy(), rate
+    return pred_Y_index.detach().numpy(), rate

@@ -1,20 +1,19 @@
-from functools import reduce
-import numpy as np
-import pandas as pd
-
+# Models
 from sklearn.linear_model import LinearRegression
 from sklearn.linear_model import SGDClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn import svm
 
+# Data
 from sklearn.metrics import confusion_matrix
-
 from sklearn.model_selection import train_test_split
-
-import Custom_Models.ir_nn as iRacing_NN
-import torch
 import torch.nn as nn
+
+import torch
+import numpy as np
+import pandas as pd
+import Custom_Models.ir_nn as iRacing_NN
 
 import pickle
 import sys
@@ -83,11 +82,7 @@ def loadData(paths, features):
         y = np.array(pd.read_csv(path, delimiter=',', usecols=lambda x: x in ["ManualBoost"]))
 
         # Find the features
-        d = np.array(pd.read_csv(path, delimiter=',', \
-            usecols=lambda x: x in features))
-
-        # Normalize d
-        # d = d / np.sum(d)
+        d = np.array(pd.read_csv(path, delimiter=',', usecols=lambda x: x in features))
 
         # If there is no data before reset the variable
         if data is None:
@@ -96,17 +91,39 @@ def loadData(paths, features):
         else:
             data = np.concatenate((data, np.concatenate((y, d), axis=1)), axis=0)
     
+    # TODO: implement correct column-wise normalization
+    # Normalize features column-wise
+    # data[:, 1:] = np.sum(data[:, 1:], axis=1)
+
     return data
 
-def reduceDataSet(dataset):
-    class_0_indicies = np.where(dataset[:, 0] == 0)[0]
-    class_1_indicies = np.where(dataset[:, 0] == 1)[0]
+def balanceDataSet(dataset):
+    class_0_indicies = np.array(np.where(dataset[:, 0] == 0)[0])
+    class_1_indicies = np.array(np.where(dataset[:, 0] == 1)[0])
 
-    np.random.shuffle(class_0_indicies)
+    print(class_0_indicies.shape)
+    print(class_1_indicies.shape)
 
-    chosen_indicies = class_0_indicies[:int(0.5 * len(class_0_indicies))]
+    if class_0_indicies.shape[0] > class_1_indicies.shape[0]:
+        np.random.shuffle(class_0_indicies)
+        choosen_0_indicies = np.random.choice(class_0_indicies, size=class_1_indicies.shape[0])
+        new_dataset = np.concatenate((dataset[class_1_indicies], dataset[choosen_0_indicies]), axis=0)
+        return new_dataset
+    
+    return dataset
+    
+"""
+The following functions will return a desired model by either loading it from storage
+or training a new one if one isn't trained in the past.
+"""
 
-    return np.delete(dataset, chosen_indicies, axis=0)
+def getNearestNeighborModel(features):
+    if os.path.exists("src/Generated_Models/nearest_neighbor_model.p"):
+        return pickle.load(open("src/Generated_Models/nearest_neighbor_model.p", 'rb'))
+    
+    data = loadData(findPaths("Data/Audi/"), features) 
+    x_train, x_test, y_train, y_test = train_test_split(data[:, 1:], data[:, 0], test_size=0.1, random_state=0)
+    return findNNModel(x_train, x_test, y_train, y_test)
 
 """
 The following functions train and return different types of models. They all also
@@ -197,7 +214,7 @@ def findNNModel(x_train, y_train, x_test, y_test):
 
     # Print accuracy
     accuracy = len(np.where(y_hat == y_test)[0]) / float(len(y_test)) * 100
-    print("NN Model Accuracy: %3.3f" %accuracy)
+    print("Nearest Neighbor Model Accuracy: %3.3f" %accuracy)
     print("\tY Hat Max:", np.max(y_hat))
     print("\tY Hat Min:", np.min(y_hat))
     print(confusion_matrix(y_test, y_hat, labels=range(0, 2)))
@@ -222,25 +239,25 @@ def findMLPModel(x_train, y_train, x_test, y_test):
     print("\tY Hat Max:", np.max(y_hat))
     print("\tY Hat Min:", np.min(y_hat))
     print(confusion_matrix(y_test, y_hat, labels=range(0, 2)))
-    for i in np.where(y_hat != y_test)[0]:
-        print("%d\ty_hat: %1.1f\tgt_y: %1.1f" %(i, y_hat[i], y_test[i]))
+    # for i in np.where(y_hat != y_test)[0]:
+    #     print("%d\ty_hat: %1.1f\tgt_y: %1.1f" %(i, y_hat[i], y_test[i]))
 
     return model
 
 def findNeuralNetModel(x_train, y_train, x_test, y_test):
     # Make NN
-    net = iRacing_NN.iRacing_Network(x_train.shape[1], 10, 25)
+    net = iRacing_NN.iRacing_Network(x_train.shape[1], 15, 25)
 
     # Set opimizer and criterion
-    criterion = nn.MSELoss()
-    # optimizer = torch.optim.SGD(net.parameters(), lr=1e-3, momentum=0.9)
-    optimizer = torch.optim.Adam(net.parameters(), lr=1e-5)
+    criterion = nn.CrossEntropyLoss()
+    # optimizer = torch.optim.SGD(net.parameters(), lr=1e-2, momentum=0.999)
+    optimizer = torch.optim.Adam(net.parameters(), lr=1e-3)
 
     ## Test Code ##
     print("Neural Net: Starting Training", flush=True)
     ## ENd Test Code ##
 
-    iRacing_NN.trainNetwork(net, x_train, y_train, optimizer, 20000, -1, criterion)
+    iRacing_NN.trainNetwork(net, x_train, y_train, optimizer, 100000, -1, criterion)
 
     y_hat, accuracy = iRacing_NN.success_rate(net, x_test, y_test)
 
@@ -268,10 +285,11 @@ if __name__ == "__main__":
 
     # Hard coded features
     features = ["Brake", "EnergyERSBatteryPct", "EnergyMGU_KLapDeployPct", "Speed", \
-        "SteeringWheelAngle", "Throttle", "VelocityY", "SteeringWheelAngle", \
-        "dcMGUKDeployFixed", "dcMGUKDeployMode", "dcMGUKRegenGain"]
+        "SteeringWheelAngle", "Throttle", "VelocityY", "dcMGUKDeployFixed", "dcMGUKDeployMode", "dcMGUKRegenGain"]
 
     data = loadData(findPaths(data_dir), features)
+
+    data = balanceDataSet(data)
 
     x_train, x_test, y_train, y_test = train_test_split(data[:, 1:], data[:, 0], test_size=0.1, random_state=0)
 
@@ -282,19 +300,28 @@ if __name__ == "__main__":
     ##
 
     # linear_model = findLinearModel(x_train, y_train, x_test, y_test)
-    # pickle.dump(linear_model, open("linear_test_model.p", "wb"))
+    # pickle.dump(linear_model, open("D:/Personal Projects/irsdk_hybrid_util/src/Generated_Models/linear_model.p", "wb"))
     # print("", flush=True)
+
     # svc_model = findSVCModel(x_train, y_train, x_test, y_test)
-    # pickle.dump(svc_model, open("svc_test_model.p", "wb"))
+    # pickle.dump(svc_model, open("D:/Personal Projects/irsdk_hybrid_util/src/Generated_Models/svc_model.p", "wb"))
     # print("", flush=True)
+
     # svr_model = findSVRModel(x_train, y_train, x_test, y_test)
-    # pickle.dump(svr_model, open("svr_test_model.p", "wb"))
+    # pickle.dump(svr_model, open("D:/Personal Projects/irsdk_hybrid_util/src/Generated_Models/svr_model.p", "wb"))
     # print("", flush=True)
+
     # sgd_model = findSGDModel(x_train, y_train, x_test, y_test)
-    # pickle.dump(sgd_model, open("sgd_test_model.p", "wb"))
+    # pickle.dump(sgd_model, open("D:/Personal Projects/irsdk_hybrid_util/src/Generated_Models/sgd_model.p", "wb"))
     # print("", flush=True)
+
     # nn_model = findNNModel(x_train, y_train, x_test, y_test)
-    # pickle.dump(nn_model, open("nearest_neighbor_test_model.p", "wb"))
+    # pickle.dump(nn_model, open("D:/Personal Projects/irsdk_hybrid_util/src/Generated_Models/nearest_neighbor_model.p", "wb"))
     # print("", flush=True)
+
+    # mlp_model = findMLPModel(x_train, y_train, x_test, y_test)
+    # pickle.dump(mlp_model, open("D:/Personal Projects/irsdk_hybrid_util/src/Generated_Models/mlp_model.p", "wb"))
+    # print("", flush=True)
+
     net_model = findNeuralNetModel(x_train, y_train, x_test, y_test)
-    pickle.dump(net_model, open("neural_network_test_model.p", "wb"))
+    pickle.dump(net_model, open("D:/Personal Projects/irsdk_hybrid_util/src/Generated_Models/neural_network_model.p", "wb"))
