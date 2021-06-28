@@ -119,7 +119,7 @@ if __name__ == "__main__":
 
     # Load the nearest neighbor model
     print("Attempting to load model")
-    prediction_model = model.getNearestNeighborModel(features)
+    prediction_model = model.getNeuralNetworkModel(features)
     print("Model Loaded")
 
     print("# ----- Utility Initialized ----- #")
@@ -139,7 +139,7 @@ if __name__ == "__main__":
                     boost_off(state)
 
             ## Test Code ##
-            if debug_mode:
+            # if debug_mode:
                 # extracted_features = np.reshape(np.array([ir[i] for i in features]), (1, -1))
 
                 # print(extracted_features)

@@ -90,19 +90,23 @@ def loadData(paths, features):
         # Otherwise add to the end of the already found data
         else:
             data = np.concatenate((data, np.concatenate((y, d), axis=1)), axis=0)
-    
-    # TODO: implement correct column-wise normalization
-    # Normalize features column-wise
-    # data[:, 1:] = np.sum(data[:, 1:], axis=1)
 
     return data
 
 def balanceDataSet(dataset):
+    """
+    Functiuon to balance the dataset between the two possible classes. This will improve the 
+    training performance of the model.
+
+    Parameters:
+        dataset : dataset to balance
+    
+    Return:
+        If there is more of one class in the dataset, return a new dataset where the two classes
+        are equal. Otherwise return the original dataset.
+    """
     class_0_indicies = np.array(np.where(dataset[:, 0] == 0)[0])
     class_1_indicies = np.array(np.where(dataset[:, 0] == 1)[0])
-
-    print(class_0_indicies.shape)
-    print(class_1_indicies.shape)
 
     if class_0_indicies.shape[0] > class_1_indicies.shape[0]:
         np.random.shuffle(class_0_indicies)
@@ -117,11 +121,19 @@ The following functions will return a desired model by either loading it from st
 or training a new one if one isn't trained in the past.
 """
 
-def getNearestNeighborModel(features):
-    if os.path.exists("src/Generated_Models/nearest_neighbor_model.p"):
-        return pickle.load(open("src/Generated_Models/nearest_neighbor_model.p", 'rb'))
+def getNearestNeighborModel(features, path="D:/Personal Projects/irsdk_hybrid_util/Data/Audi/"):
+    if os.path.exists("D:/Personal Projects/irsdk_hybrid_util/src/Generated_Models/nearest_neighbor_model.p"):
+        return pickle.load(open("D:/Personal Projects/irsdk_hybrid_util/src/Generated_Models/nearest_neighbor_model.p", 'rb'))
     
-    data = loadData(findPaths("Data/Audi/"), features) 
+    data = loadData(findPaths(path), features) 
+    x_train, x_test, y_train, y_test = train_test_split(data[:, 1:], data[:, 0], test_size=0.1, random_state=0)
+    return findNNModel(x_train, x_test, y_train, y_test)
+
+def getNeuralNetworkModel(features, path="D:/Personal Projects/irsdk_hybrid_util/Data/Audi/"):
+    if os.path.exists("D:/Personal Projects/irsdk_hybrid_util/src/Generated_Models/neural_network_model.p.p"):
+        return pickle.load(open("D:/Personal Projects/irsdk_hybrid_util/src/Generated_Models/neural_network_model.p.p", 'rb'))
+    
+    data = loadData(findPaths(path), features) 
     x_train, x_test, y_train, y_test = train_test_split(data[:, 1:], data[:, 0], test_size=0.1, random_state=0)
     return findNNModel(x_train, x_test, y_train, y_test)
 
@@ -246,7 +258,7 @@ def findMLPModel(x_train, y_train, x_test, y_test):
 
 def findNeuralNetModel(x_train, y_train, x_test, y_test):
     # Make NN
-    net = iRacing_NN.iRacing_Network(x_train.shape[1], 15, 25)
+    net = iRacing_NN.iRacing_Network(x_train.shape[1], 15, 50)
 
     # Set opimizer and criterion
     criterion = nn.CrossEntropyLoss()
