@@ -130,12 +130,12 @@ def getNearestNeighborModel(features, path="D:/Personal Projects/irsdk_hybrid_ut
     return findNNModel(x_train, x_test, y_train, y_test)
 
 def getNeuralNetworkModel(features, path="D:/Personal Projects/irsdk_hybrid_util/Data/Audi/"):
-    if os.path.exists("D:/Personal Projects/irsdk_hybrid_util/src/Generated_Models/neural_network_model.p.p"):
-        return pickle.load(open("D:/Personal Projects/irsdk_hybrid_util/src/Generated_Models/neural_network_model.p.p", 'rb'))
+    if os.path.exists("D:/Personal Projects/irsdk_hybrid_util/src/Generated_Models/neural_network_model.p"):
+        return pickle.load(open("D:/Personal Projects/irsdk_hybrid_util/src/Generated_Models/neural_network_model.p", 'rb'))
     
     data = loadData(findPaths(path), features) 
     x_train, x_test, y_train, y_test = train_test_split(data[:, 1:], data[:, 0], test_size=0.1, random_state=0)
-    return findNNModel(x_train, x_test, y_train, y_test)
+    return findNeuralNetModel(x_train, x_test, y_train, y_test)
 
 """
 The following functions train and return different types of models. They all also
@@ -258,7 +258,7 @@ def findMLPModel(x_train, y_train, x_test, y_test):
 
 def findNeuralNetModel(x_train, y_train, x_test, y_test):
     # Make NN
-    net = iRacing_NN.iRacing_Network(x_train.shape[1], 20, 50)
+    net = iRacing_NN.iRacing_Network(x_train.shape[1], 15, 50)
 
     # Set opimizer and criterion
     criterion = nn.CrossEntropyLoss()

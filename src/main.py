@@ -117,7 +117,7 @@ if __name__ == "__main__":
     if debug_mode:
         state.window, state.canvas, state.light_item = create_light_window(500, 500)
 
-    # Load the nearest neighbor model
+    # Load the neural network model
     print("Attempting to load model")
     prediction_model = model.getNeuralNetworkModel(features)
     print("Model Loaded")
@@ -134,8 +134,10 @@ if __name__ == "__main__":
                 extracted_features = np.reshape(np.array([ir[i] for i in features]), (1, -1))
 
                 if prediction_model.predict(extracted_features)[0] == 1.0:
+                    print("%s ir_client: turn boost light on" %date.datetime.now().strftime("%c"))
                     boost_on(state)
                 else:
+                    print("%s ir_client: turn boost light off" %date.datetime.now().strftime("%c"))
                     boost_off(state)
 
             ## Test Code ##
