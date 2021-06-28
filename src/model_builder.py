@@ -258,12 +258,12 @@ def findMLPModel(x_train, y_train, x_test, y_test):
 
 def findNeuralNetModel(x_train, y_train, x_test, y_test):
     # Make NN
-    net = iRacing_NN.iRacing_Network(x_train.shape[1], 15, 50)
+    net = iRacing_NN.iRacing_Network(x_train.shape[1], 20, 50)
 
     # Set opimizer and criterion
     criterion = nn.CrossEntropyLoss()
     # optimizer = torch.optim.SGD(net.parameters(), lr=1e-2, momentum=0.999)
-    optimizer = torch.optim.Adam(net.parameters(), lr=1e-3)
+    optimizer = torch.optim.Adam(net.parameters(), lr=1e-4)
 
     ## Test Code ##
     print("Neural Net: Starting Training", flush=True)

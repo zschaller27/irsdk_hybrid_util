@@ -21,6 +21,7 @@ class iRacing_Network(nn.Module):
                 self.hidden_layers.append(nn.Linear(nodes_per_layer, nodes_per_layer, bias=True))
 
         self.hidden_layers = nn.ModuleList(self.hidden_layers)
+        self.soft_max = nn.Softmax(dim=1)
     
     def forward(self, data):      
         x = self.in_layer(data)
@@ -28,7 +29,7 @@ class iRacing_Network(nn.Module):
         for layer in self.hidden_layers:
             x = F.relu(layer(x))
         
-        return self.output_layer(x)
+        return self.soft_max(self.output_layer(x))
     
 def trainNetwork(network, x_train, y_train, optimizer, epochs=10, batch_size=16, loss_function=nn.CrossEntropyLoss()):
     # Make sure data is stored in torch Variables
