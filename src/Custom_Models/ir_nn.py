@@ -13,7 +13,8 @@ class iRacing_Network(nn.Module):
 
         # Build Network Architecture
         self.in_layer = nn.Linear(num_features, nodes_per_layer, bias=True)
-        self.output_layer = nn.Linear(nodes_per_layer, 2, bias=True)        # Use 1-hot classification
+        self.output_layer = nn.Linear(nodes_per_layer, 2)        # Use 1-hot classification
+        self.soft_max_layer = nn.Softmax(dim=1)
 
         self.hidden_layers = []
         if num_layers > 1:
@@ -22,15 +23,21 @@ class iRacing_Network(nn.Module):
 
         self.hidden_layers = nn.ModuleList(self.hidden_layers)
     
-    def forward(self, data):      
+    def forward(self, data):
+        if not isinstance(data, torch.Tensor):
+            data = torch.Tensor(data)
+
         x = self.in_layer(data)
 
         for layer in self.hidden_layers:
             x = F.relu(layer(x))
         
-        return self.output_layer(x)
+        return self.soft_max_layer(self.output_layer(x))
 
     def predict(self, input):
+        if not isinstance(input, torch.Tensor):
+            input = torch.Tensor(input)
+
         _, pred_class = torch.max(self.forward(input), 1)
         return pred_class
     
