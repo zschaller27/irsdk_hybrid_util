@@ -6,6 +6,7 @@ import tkinter as tk
 import datetime as date
 import numpy as np
 
+import pickle
 import time
 
 class iRacing_Client_State:
@@ -63,7 +64,7 @@ def boost_on(client_state):
     """
     client_state.canvas.itemconfig(client_state.light_item, fill=client_state.on_colour)
     client_state.window.update()
-    
+
 def check_iracing(ir_client, client_state):
     """
     Function that updates the state object given an sdk.IRSDK() object.
@@ -107,16 +108,19 @@ if __name__ == "__main__":
 
     ## Initialize Values ##
     # General Values #
-    timeout = 1 / 10     # How long before running the loop again
-    features = ["Brake", "EnergyERSBatteryPct", "EnergyMGU_KLapDeployPct", "Speed", \
-        "SteeringWheelAngle", "Throttle", "VelocityY", "dcMGUKDeployFixed", "dcMGUKDeployMode", "dcMGUKRegenGain"]
+    timeout = 10 / 10     # How long before running the loop again
+    features = ["Brake", "EnergyERSBatteryPct", "EnergyMGU_KLapDeployPct", "Speed", "Throttle", \
+        "dcMGUKDeployFixed", "dcMGUKDeployMode", "dcMGUKRegenGain"]
 
     ## Debug Mode Enables Some Command Line Output to Test Different Code Snippets ##
     debug_mode = True
 
+    ## Test Code ##
     if debug_mode:
-        state.window, state.canvas, state.light_item = create_light_window(500, 500)
-
+        saved_features = []
+        test_points = np.array(pickle.load(open("D:/Personal Projects/irsdk_hybrid_util/test_points.p", 'rb')))
+    ## End Test Code ##
+    
     # Load the neural network model
     print("Attempting to load model")
     prediction_model = model.getNeuralNetworkModel(features)
@@ -133,7 +137,11 @@ if __name__ == "__main__":
             if state.ir_connected and ir["IsOnTrack"]:
                 extracted_features = np.reshape(np.array([ir[i] for i in features]), (1, -1))
 
-                if prediction_model.predict(extracted_features)[0] == 1.0:
+                if debug_mode:
+                    print("%s ir_client:\tFeatures: %s\tRaw Prediction: %s\tClass Predicted: %s" %(date.datetime.now().strftime("%c"), extracted_features, prediction_model(extracted_features), prediction_model.predict(extracted_features)))
+                    saved_features.append(extracted_features)
+
+                if prediction_model.predict(extracted_features)[0] > 0:
                     print("%s ir_client: turn boost light on" %date.datetime.now().strftime("%c"))
                     boost_on(state)
                 else:
@@ -141,12 +149,10 @@ if __name__ == "__main__":
                     boost_off(state)
 
             ## Test Code ##
-            # if debug_mode:
-                # extracted_features = np.reshape(np.array([ir[i] for i in features]), (1, -1))
+            if debug_mode:
+                test_point = test_points[np.random.choice(test_points.shape[0], size=1)][:, 1:]
 
-                # print(extracted_features)
-
-                # print(prediction_model.predict(extracted_features)[0])
+                print("%s ir_client:\tFeatures: %s\tRaw Prediction: %s\tClass Predicted: %s" %(date.datetime.now().strftime("%c"), test_point, prediction_model(test_point), prediction_model.predict(test_point)))
             ## End Test Code ##
             
             # Wait the timeout duration before checking again
@@ -154,5 +160,8 @@ if __name__ == "__main__":
 
     except KeyboardInterrupt:
         if state.ir_connected:
-            print("# ----- Shutting Down ----- #")
+            print("# ----- Shutting Down ----- #")            
             close_util(ir, state)
+        if debug_mode:
+            print("# ----- Saving Test Info ----- #")            
+            pickle.dump(saved_features, open("test_features.p", 'wb'))

@@ -263,7 +263,7 @@ def findNeuralNetModel(x_train, y_train, x_test, y_test):
     # Set opimizer and criterion
     criterion = nn.CrossEntropyLoss()
     # optimizer = torch.optim.SGD(net.parameters(), lr=1e-2, momentum=0.999)
-    optimizer = torch.optim.Adam(net.parameters(), lr=1e-4)
+    optimizer = torch.optim.Adam(net.parameters(), lr=1e-3)
 
     ## Test Code ##
     print("Neural Net: Starting Training", flush=True)
@@ -296,12 +296,30 @@ if __name__ == "__main__":
     data_dir = sys.argv[1]
 
     # Hard coded features
-    features = ["Brake", "EnergyERSBatteryPct", "EnergyMGU_KLapDeployPct", "Speed", \
-        "SteeringWheelAngle", "Throttle", "VelocityY", "dcMGUKDeployFixed", "dcMGUKDeployMode", "dcMGUKRegenGain"]
+    features = ["Brake", "Throttle", "Speed", "EnergyERSBatteryPct", "EnergyMGU_KLapDeployPct", \
+        "dcMGUKDeployFixed", "dcMGUKDeployMode", "dcMGUKRegenGain"]
+    
+    """
+    The features will be read in in this order:
+        Feature : Index
+        Brake : 0
+        Throttle : 4
+        Speed : 3
+        EnergyERSBatteryPct : 1
+        EnergyMGU_KLapDeployPct : 2
+        dcMGUKDeployFixed : 5
+        dcMGUKDeployMode : 6
+        dcMGUKRegenGain : 7
+    """
 
     data = loadData(findPaths(data_dir), features)
 
     data = balanceDataSet(data)
+
+    # Need to make training data reflect the features that will be seen in the actual execution
+    data[:, [1, 2, 3, 5]] /= 100
+
+    pickle.dump(data[np.where(data[:, 0] == 1)[0]], open("test_points.p", 'wb'))
 
     x_train, x_test, y_train, y_test = train_test_split(data[:, 1:], data[:, 0], test_size=0.1, random_state=0)
 
