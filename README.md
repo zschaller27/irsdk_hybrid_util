@@ -11,3 +11,6 @@ This utility's code relies on the following python libraries:
 # Usage
 To start the utility run the main.py file using python3 such as: ```python main.py```
 The utility will notify the user via the command line upon connection/disconnection to an iRacing client.
+
+# Big Issue
+ The biggest issue right now is that pyirsdk and the saved telemtry don't have the same formats for each column so they aren't very comparable without more work. Since I don't drive this car all the time its hard to get that info.

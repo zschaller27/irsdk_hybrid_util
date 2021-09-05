@@ -1,5 +1,3 @@
-from tkinter import messagebox
-
 import model_builder as model
 import irsdk as sdk
 import tkinter as tk
@@ -117,6 +115,7 @@ if __name__ == "__main__":
 
     ## Test Code ##
     if debug_mode:
+        print("############ DEBUG MODE ON ##########")
         saved_features = []
         test_points = np.array(pickle.load(open("D:/Personal Projects/irsdk_hybrid_util/test_points.p", 'rb')))
     ## End Test Code ##
@@ -150,6 +149,7 @@ if __name__ == "__main__":
 
             ## Test Code ##
             if debug_mode:
+                print("##### Test Point #####")
                 test_point = test_points[np.random.choice(test_points.shape[0], size=1)][:, 1:]
 
                 print("%s ir_client:\tFeatures: %s\tRaw Prediction: %s\tClass Predicted: %s" %(date.datetime.now().strftime("%c"), test_point, prediction_model(test_point), prediction_model.predict(test_point)))
